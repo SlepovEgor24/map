@@ -5,6 +5,7 @@ import requests
 from PyQt6.QtCore import Qt
 
 SCREEN_SIZE = [500, 500]
+STEP = 0.01
 
 
 class Window(QWidget):
@@ -54,6 +55,23 @@ class Window(QWidget):
                 self.map()
             else:
                 print('Достигнут предел по размеру')
+        elif event.key() == Qt.Key.Key_Up:
+            self.move_map(0, STEP)
+        elif event.key() == Qt.Key.Key_Down:
+            self.move_map(0, -STEP)
+        elif event.key() == Qt.Key.Key_Left:
+            self.move_map(-STEP, 0)
+        elif event.key() == Qt.Key.Key_Right:
+            self.move_map(STEP, 0)
+
+    def move_map(self, dx, dy):
+        lon, lat = map(float, self.coords.split(','))
+        lon += dx
+        lat += dy
+        lon = max(min(lon, 180), -180)
+        lat = max(min(lat, 85), -85)
+        self.coords = f'{lon},{lat}'
+        self.map()
 
 
 if __name__ == '__main__':
