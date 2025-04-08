@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton
 from PyQt6.QtGui import QPixmap
 import requests
 from PyQt6.QtCore import Qt
@@ -16,30 +16,44 @@ class Window(QWidget):
     def initUI(self):
         self.setGeometry(400, 400, *SCREEN_SIZE)
         self.setWindowTitle('Отображение карты')
-        self.pixmap = QPixmap('map.png')
+        self.dark_theme = False
+        self.button = QPushButton('Тёмная тема', self)
+        self.button.resize(100, 20)
+        self.button.move(220, 460)
+        self.button.clicked.connect(self.changing_theme)
+        self.button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.image = QLabel(self)
-        self.image.move(0, -20)
-        self.image.resize(500, 500)
-        # Отображаем содержимое QPixmap в объекте QLabel
-        self.image.setPixmap(self.pixmap)
+        self.image.move(0, 0)
+        self.image.resize(500, 450)
         self.map_size = 8
         self.server = 'http://static-maps.yandex.ru/v1'
         self.coords = '37.3712,55.4515'
+        self.map()
+        self.setFocus()
+
+    def changing_theme(self):
+        self.dark_theme = not self.dark_theme
+        if self.dark_theme:
+            self.button.setText('Светлая тема')
+        else:
+            self.button.setText('Тёмная тема')
         self.map()
 
     def map(self):
         params = {
             'apikey': 'f3a0fe3a-b07e-4840-a1da-06f18b2ddf13',
-            'll': f'{self.coords}',
+            'll': self.coords,
             'lang': 'ru_RU',
             'size': '450,450',
-            'z': f'{self.map_size}'
+            'z': str(self.map_size),
+            'theme': 'dark' if self.dark_theme else 'light'
         }
         response = requests.get(self.server, params=params)
         map_file = "map.png"
         with open(map_file, "wb") as file:
             file.write(response.content)
-        self.pixmap = QPixmap('map.png')
+        self.pixmap = QPixmap()
+        self.pixmap.loadFromData(response.content)
         self.image.setPixmap(self.pixmap)
 
     def keyPressEvent(self, event):
