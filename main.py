@@ -1,10 +1,10 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QLineEdit
+from PyQt6.QtWidgets import QApplication, QWidget, QLabel, QPushButton, QLineEdit, QCheckBox
 from PyQt6.QtGui import QPixmap
 import requests
 from PyQt6.QtCore import Qt
 
-SCREEN_SIZE = [500, 550]  # Увеличили высоту с 500 до 550
+SCREEN_SIZE = [500, 550]
 STEP = 0.01
 
 
@@ -42,6 +42,9 @@ class Window(QWidget):
         self.reset_button.resize(50, 20)
         self.reset_button.clicked.connect(self.reset_marker)
         self.reset_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.index_checkbox = QCheckBox('Показать индекс', self)
+        self.index_checkbox.move(390, 460)
+        self.index_checkbox.setChecked(False)
         self.address_label = QLabel(self)
         self.address_label.move(10, 490)
         self.address_label.resize(480, 50)
@@ -127,10 +130,24 @@ class Window(QWidget):
                     geo_object = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
                     coords = geo_object['Point']['pos']
                     address = geo_object['metaDataProperty']['GeocoderMetaData']['text']
+                    # Извлечение почтового индекса
+                    postal_code = geo_object['metaDataProperty']['GeocoderMetaData'].get('Address', {}).get('postal_code', '')
+                    # Если индекс не найден в Address, ищем в Components
+                    if not postal_code:
+                        components = geo_object['metaDataProperty']['GeocoderMetaData'].get('Address', {}).get('Components', [])
+                        for component in components:
+                            if component.get('kind') == 'postal_code':
+                                postal_code = component.get('name', '')
+                                break
+                    # Формирование адреса с индексом, если переключатель включён
+                    if self.index_checkbox.isChecked() and postal_code:
+                        full_address = f'Адрес: {address}, индекс {postal_code}'
+                    else:
+                        full_address = f'Адрес: {address}'
                     lon, lat = map(float, coords.split())
                     self.coords = f'{lon},{lat}'
                     self.marker_coords = f'{lon},{lat}'
-                    self.address_label.setText(f'Адрес: {address}')
+                    self.address_label.setText(full_address)
                     self.map()
                 except (IndexError, KeyError):
                     print("Объект не найден")
