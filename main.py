@@ -29,6 +29,8 @@ class Window(QWidget):
         self.server = 'http://static-maps.yandex.ru/v1'
         self.coords = '37.3712,55.4515'
         self.marker_coords = None
+        self.last_address = ''
+        self.last_postal_code = ''
         self.search_input = QLineEdit(self)
         self.search_input.move(10, 460)
         self.search_input.resize(150, 20)
@@ -45,6 +47,7 @@ class Window(QWidget):
         self.index_checkbox = QCheckBox('Показать индекс', self)
         self.index_checkbox.move(390, 460)
         self.index_checkbox.setChecked(False)
+        self.index_checkbox.stateChanged.connect(self.update_address_display)
         self.address_label = QLabel(self)
         self.address_label.move(10, 490)
         self.address_label.resize(480, 50)
@@ -129,21 +132,21 @@ class Window(QWidget):
                 try:
                     geo_object = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
                     coords = geo_object['Point']['pos']
-                    address = geo_object['metaDataProperty']['GeocoderMetaData']['text']
+                    self.last_address = geo_object['metaDataProperty']['GeocoderMetaData']['text']
                     # Извлечение почтового индекса
-                    postal_code = geo_object['metaDataProperty']['GeocoderMetaData'].get('Address', {}).get('postal_code', '')
+                    self.last_postal_code = geo_object['metaDataProperty']['GeocoderMetaData'].get('Address', {}).get('postal_code', '')
                     # Если индекс не найден в Address, ищем в Components
-                    if not postal_code:
+                    if not self.last_postal_code:
                         components = geo_object['metaDataProperty']['GeocoderMetaData'].get('Address', {}).get('Components', [])
                         for component in components:
                             if component.get('kind') == 'postal_code':
-                                postal_code = component.get('name', '')
+                                self.last_postal_code = component.get('name', '')
                                 break
                     # Формирование адреса с индексом, если переключатель включён
-                    if self.index_checkbox.isChecked() and postal_code:
-                        full_address = f'Адрес: {address}, индекс {postal_code}'
+                    if self.index_checkbox.isChecked() and self.last_postal_code:
+                        full_address = f'Адрес: {self.last_address}, индекс {self.last_postal_code}'
                     else:
-                        full_address = f'Адрес: {address}'
+                        full_address = f'Адрес: {self.last_address}'
                     lon, lat = map(float, coords.split())
                     self.coords = f'{lon},{lat}'
                     self.marker_coords = f'{lon},{lat}'
@@ -158,9 +161,21 @@ class Window(QWidget):
 
     def reset_marker(self):
         self.marker_coords = None
+        self.last_address = ''
+        self.last_postal_code = ''
         self.address_label.setText('Адрес: ')
         self.map()
         self.setFocus()
+
+    def update_address_display(self):
+        if self.last_address:
+            if self.index_checkbox.isChecked() and self.last_postal_code:
+                full_address = f'Адрес: {self.last_address}, индекс {self.last_postal_code}'
+            else:
+                full_address = f'Адрес: {self.last_address}'
+            self.address_label.setText(full_address)
+        else:
+            self.address_label.setText('Адрес: ')
 
 
 if __name__ == '__main__':
