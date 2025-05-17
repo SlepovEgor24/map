@@ -27,6 +27,7 @@ class Window(QWidget):
         self.map_size = 8
         self.server = 'http://static-maps.yandex.ru/v1'
         self.coords = '37.3712,55.4515'
+        self.marker_coords = None
         self.search_input = QLineEdit(self)
         self.search_input.move(10, 460)
         self.search_input.resize(150, 20)
@@ -45,6 +46,7 @@ class Window(QWidget):
         else:
             self.button.setText('Тёмная тема')
         self.map()
+        self.setFocus()
 
     def map(self):
         params = {
@@ -55,6 +57,8 @@ class Window(QWidget):
             'z': str(self.map_size),
             'theme': 'dark' if self.dark_theme else 'light'
         }
+        if self.marker_coords:
+            params['pt'] = f'{self.marker_coords},pm2rdm'
         response = requests.get(self.server, params=params)
         map_file = "map.png"
         with open(map_file, "wb") as file:
@@ -93,6 +97,7 @@ class Window(QWidget):
         lat = max(min(lat, 85), -85)
         self.coords = f'{lon},{lat}'
         self.map()
+        self.setFocus()
 
     def search_object(self):
         query = self.search_input.text().strip()
@@ -111,27 +116,14 @@ class Window(QWidget):
                     coords = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
                     lon, lat = map(float, coords.split())
                     self.coords = f'{lon},{lat}'
-                    params = {
-                        'apikey': 'f3a0fe3a-b07e-4840-a1da-06f18b2ddf13',
-                        'll': self.coords,
-                        'lang': 'ru_RU',
-                        'size': '450,450',
-                        'z': str(self.map_size),
-                        'theme': 'dark' if self.dark_theme else 'light',
-                        'pt': f'{self.coords},pm2rdm'  # Метка на объекте
-                    }
-                    response = requests.get(self.server, params=params)
-                    map_file = "map.png"
-                    with open(map_file, "wb") as file:
-                        file.write(response.content)
-                    self.pixmap = QPixmap()
-                    self.pixmap.loadFromData(response.content)
-                    self.image.setPixmap(self.pixmap)
+                    self.marker_coords = f'{lon},{lat}'
+                    self.map()
                 except (IndexError, KeyError):
                     print("Объект не найден")
             else:
                 print("Ошибка при геокодировании")
         self.search_input.clear()
+        self.setFocus()
 
 
 if __name__ == '__main__':
