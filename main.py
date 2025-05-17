@@ -4,7 +4,7 @@ from PyQt6.QtGui import QPixmap
 import requests
 from PyQt6.QtCore import Qt
 
-SCREEN_SIZE = [500, 500]
+SCREEN_SIZE = [500, 550]  # Увеличили высоту с 500 до 550
 STEP = 0.01
 
 
@@ -19,7 +19,7 @@ class Window(QWidget):
         self.dark_theme = False
         self.button = QPushButton('Тёмная тема', self)
         self.button.resize(100, 20)
-        self.button.move(220, 460)  # Сдвинули с 280 на 220
+        self.button.move(220, 460)
         self.button.clicked.connect(self.changing_theme)
         self.button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.image = QLabel(self)
@@ -42,6 +42,11 @@ class Window(QWidget):
         self.reset_button.resize(50, 20)
         self.reset_button.clicked.connect(self.reset_marker)
         self.reset_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.address_label = QLabel(self)
+        self.address_label.move(10, 490)
+        self.address_label.resize(480, 50)
+        self.address_label.setText('Адрес: ')
+        self.address_label.setWordWrap(True)
         self.map()
         self.setFocus()
 
@@ -119,10 +124,13 @@ class Window(QWidget):
             if response.status_code == 200:
                 data = response.json()
                 try:
-                    coords = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
+                    geo_object = data['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']
+                    coords = geo_object['Point']['pos']
+                    address = geo_object['metaDataProperty']['GeocoderMetaData']['text']
                     lon, lat = map(float, coords.split())
                     self.coords = f'{lon},{lat}'
                     self.marker_coords = f'{lon},{lat}'
+                    self.address_label.setText(f'Адрес: {address}')
                     self.map()
                 except (IndexError, KeyError):
                     print("Объект не найден")
@@ -133,6 +141,7 @@ class Window(QWidget):
 
     def reset_marker(self):
         self.marker_coords = None
+        self.address_label.setText('Адрес: ')
         self.map()
         self.setFocus()
 
