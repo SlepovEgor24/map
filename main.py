@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt
 SCREEN_SIZE = [500, 500]
 STEP = 0.01
 
+
 class Window(QWidget):
     def __init__(self):
         super().__init__()
@@ -18,7 +19,7 @@ class Window(QWidget):
         self.dark_theme = False
         self.button = QPushButton('Тёмная тема', self)
         self.button.resize(100, 20)
-        self.button.move(220, 460)
+        self.button.move(220, 460)  # Сдвинули с 280 на 220
         self.button.clicked.connect(self.changing_theme)
         self.button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.image = QLabel(self)
@@ -36,6 +37,11 @@ class Window(QWidget):
         self.search_button.move(170, 460)
         self.search_button.resize(50, 20)
         self.search_button.clicked.connect(self.search_object)
+        self.reset_button = QPushButton('Сброс', self)
+        self.reset_button.move(330, 460)
+        self.reset_button.resize(50, 20)
+        self.reset_button.clicked.connect(self.reset_marker)
+        self.reset_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.map()
         self.setFocus()
 
@@ -123,6 +129,11 @@ class Window(QWidget):
             else:
                 print("Ошибка при геокодировании")
         self.search_input.clear()
+        self.setFocus()
+
+    def reset_marker(self):
+        self.marker_coords = None
+        self.map()
         self.setFocus()
 
 
